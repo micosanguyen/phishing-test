@@ -1,0 +1,85 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-question-circle me-2"></i>Ngân hàng câu hỏi</h4>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('admin_import') }}" class="btn btn-outline-primary">
+      <i class="bi bi-upload me-1"></i>Import
+    </a>
+    <a href="{{ url_for('admin_question_add') }}" class="btn btn-primary">
+      <i class="bi bi-plus-circle me-1"></i>Thêm câu hỏi
+    </a>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Tiêu đề</th>
+          <th>Loại</th>
+          <th>Đáp án</th>
+          <th>Trạng thái</th>
+          <th>Ngày tạo</th>
+          <th class="text-end">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in questions %}
+          <tr class="{% if not q.active %}table-secondary{% endif %}">
+            <td class="text-muted">{{ q.id }}</td>
+            <td>
+              <div class="fw-semibold">{{ q.title }}</div>
+              <div class="text-muted small text-truncate" style="max-width:300px">{{ q.explanation[:80] }}…</div>
+            </td>
+            <td>
+              {% set type_icons = {'email': 'bi-envelope', 'link': 'bi-link-45deg', 'image': 'bi-image', 'text': 'bi-file-text'} %}
+              <i class="bi {{ type_icons.get(q.scenario_type, 'bi-file-text') }} me-1"></i>
+              <span class="text-capitalize">{{ q.scenario_type }}</span>
+            </td>
+            <td>
+              {% if q.is_phishing %}
+                <span class="badge bg-danger">Phishing</span>
+              {% else %}
+                <span class="badge bg-success">Hợp lệ</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if q.active %}
+                <span class="badge bg-success">Hoạt động</span>
+              {% else %}
+                <span class="badge bg-secondary">Ẩn</span>
+              {% endif %}
+            </td>
+            <td class="text-muted small">{{ q.created_at.strftime('%d/%m/%Y') }}</td>
+            <td class="text-end">
+              <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('admin_question_edit', qid=q.id) }}" class="btn btn-outline-primary">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form method="POST" action="{{ url_for('admin_question_toggle', qid=q.id) }}" class="d-inline">
+                  <button type="submit" class="btn btn-outline-secondary" title="{{ 'Ẩn' if q.active else 'Kích hoạt' }}">
+                    <i class="bi {{ 'bi-eye-slash' if q.active else 'bi-eye' }}"></i>
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('admin_question_delete', qid=q.id) }}" class="d-inline"
+                      onsubmit="return confirm('Xác nhận xóa câu hỏi này?')">
+                  <button type="submit" class="btn btn-outline-danger">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center text-muted py-4">Chưa có câu hỏi nào. <a href="{{ url_for('admin_question_add') }}">Thêm ngay</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

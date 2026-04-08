@@ -1,0 +1,81 @@
+{% extends "admin/base_admin.html" %}
+{% block content %}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="{{ url_for('admin_questions') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h4 class="fw-bold mb-0"><i class="bi bi-upload me-2"></i>Import câu hỏi</h4>
+</div>
+
+<div class="row g-4">
+  <!-- CSV Import -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header py-3">
+        <h6 class="mb-0 fw-semibold"><i class="bi bi-filetype-csv me-2"></i>Import từ CSV</h6>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">File CSV phải có các cột sau:</p>
+        <div class="bg-light rounded p-2 mb-3">
+          <code class="small">title, type, content, is_phishing, explanation</code>
+        </div>
+        <p class="text-muted small">
+          <strong>type:</strong> email | link | image | text<br>
+          <strong>is_phishing:</strong> true | false
+        </p>
+
+        <form method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <input type="file" class="form-control" name="csv_file" accept=".csv" required>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-upload me-1"></i>Import CSV
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- JSON Import -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header py-3">
+        <h6 class="mb-0 fw-semibold"><i class="bi bi-filetype-json me-2"></i>Import từ JSON</h6>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-2">Dán JSON array vào ô bên dưới:</p>
+        <pre class="bg-dark text-light p-2 rounded small mb-3" style="font-size:11px">[
+  {
+    "title": "Tiêu đề câu hỏi",
+    "type": "email",
+    "content": "&lt;div&gt;HTML content&lt;/div&gt;",
+    "is_phishing": true,
+    "explanation": "Giải thích..."
+  }
+]</pre>
+        <form method="POST">
+          <div class="mb-3">
+            <textarea class="form-control font-monospace small" name="json_data" rows="8"
+                      placeholder='[{"title": "...", "type": "email", "content": "...", "is_phishing": true, "explanation": "..."}]'></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-upload me-1"></i>Import JSON
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sample CSV download hint -->
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-body">
+    <h6 class="fw-semibold mb-2"><i class="bi bi-info-circle me-2 text-primary"></i>Mẫu CSV</h6>
+    <pre class="bg-light p-3 rounded small mb-0">title,type,content,is_phishing,explanation
+Email giả ngân hàng,email,"&lt;div&gt;...&lt;/div&gt;",true,"Dấu hiệu nhận biết..."
+Thông báo IT hợp lệ,text,"&lt;div&gt;...&lt;/div&gt;",false,"Đây là email hợp lệ vì..."</pre>
+  </div>
+</div>
+
+{% endblock %}

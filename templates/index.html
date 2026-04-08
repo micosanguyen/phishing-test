@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Bắt đầu Kiểm tra Phishing{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+
+      <div class="text-center mb-4">
+        <div class="hero-icon mb-3">
+          <i class="bi bi-shield-exclamation"></i>
+        </div>
+        <h1 class="h2 fw-bold">Kiểm tra Nhận thức Phishing</h1>
+        <p class="text-muted">Bài kiểm tra giúp bạn nhận biết các cuộc tấn công giả mạo (phishing) trong môi trường tài chính.</p>
+      </div>
+
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+          <h5 class="card-title mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>Hướng dẫn</h5>
+          <ul class="list-unstyled mb-0">
+            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i>Mỗi câu hỏi hiển thị một kịch bản thực tế</li>
+            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i>Chọn: đây là <strong>Phishing</strong> hay <strong>Hợp lệ</strong></li>
+            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i>Xem giải thích trước khi sang câu tiếp theo</li>
+            <li class="mb-2"><i class="bi bi-check2-circle text-success me-2"></i>Điểm đạt yêu cầu: <strong>&ge; 70%</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card shadow border-0">
+        <div class="card-body p-4">
+          <h5 class="card-title mb-3"><i class="bi bi-person-badge me-2 text-primary"></i>Thông tin của bạn</h5>
+          <form method="POST" action="{{ url_for('start_test') }}" novalidate>
+            <div class="mb-3">
+              <label for="user_name" class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-lg" id="user_name" name="user_name"
+                     placeholder="Nguyễn Văn A" required autocomplete="name">
+            </div>
+            <div class="mb-4">
+              <label for="user_email" class="form-label fw-semibold">Email công ty <span class="text-danger">*</span></label>
+              <input type="email" class="form-control form-control-lg" id="user_email" name="user_email"
+                     placeholder="ten@congty.com" required autocomplete="email">
+            </div>
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-play-circle-fill me-2"></i>Bắt đầu kiểm tra
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Câu {{ q_num + 1 }}/{{ total }} - Kiểm tra Phishing{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <!-- Progress bar -->
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="text-muted small">
+            <i class="bi bi-person-fill me-1"></i>{{ session.user_name }}
+          </span>
+          <span class="fw-semibold">Câu {{ q_num + 1 }} / {{ total }}</span>
+        </div>
+        <div class="progress" style="height:8px">
+          <div class="progress-bar bg-primary" style="width: {{ ((q_num) / total * 100)|round|int }}%"></div>
+        </div>
+      </div>
+
+      <!-- Question card -->
+      <div class="card shadow-sm border-0 mb-3" id="question-card">
+        <div class="card-header py-3">
+          <div class="d-flex align-items-center gap-2">
+            {% if question.scenario_type == 'email' %}
+              <i class="bi bi-envelope-fill text-primary"></i><span class="fw-semibold">Kịch bản Email</span>
+            {% elif question.scenario_type == 'link' %}
+              <i class="bi bi-link-45deg text-primary"></i><span class="fw-semibold">Kịch bản Đường dẫn</span>
+            {% elif question.scenario_type == 'image' %}
+              <i class="bi bi-image text-primary"></i><span class="fw-semibold">Kịch bản Hình ảnh</span>
+            {% else %}
+              <i class="bi bi-file-text text-primary"></i><span class="fw-semibold">Kịch bản</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted mb-3">Phân tích nội dung bên dưới và xác định: đây có phải tấn công phishing không?</p>
+
+          <!-- Scenario content -->
+          <div class="scenario-box mb-4">
+            {{ question.content | replace('__USER_EMAIL__', session.user_email) | safe }}
+            {% if question.image_path %}
+              <img src="{{ url_for('uploaded_file', filename=question.image_path) }}"
+                   class="img-fluid rounded mt-2" alt="Hình ảnh kịch bản">
+            {% endif %}
+          </div>
+
+          <!-- Answer buttons -->
+          <div id="answer-section">
+            {% if existing_answer %}
+              <!-- Already answered — show result state -->
+              <div id="feedback-box" class="feedback-box {% if existing_answer.is_correct %}feedback-correct{% else %}feedback-wrong{% endif %}">
+                <div class="feedback-header">
+                  {% if existing_answer.is_correct %}
+                    <i class="bi bi-check-circle-fill me-2"></i><strong>Chính xác!</strong>
+                  {% else %}
+                    <i class="bi bi-x-circle-fill me-2"></i><strong>Sai rồi!</strong>
+                    <span class="ms-2">Đáp án đúng: <strong>{{ "Phishing" if question.is_phishing else "Hợp lệ" }}</strong></span>
+                  {% endif %}
+                </div>
+                <div class="explanation-text mt-2">
+                  <i class="bi bi-lightbulb-fill me-1 text-warning"></i>{{ question.explanation }}
+                </div>
+              </div>
+              <div class="d-flex justify-content-end mt-3">
+                {% if q_num + 1 < total %}
+                  <a href="{{ url_for('test_question', session_id=session.id, q_num=q_num+1) }}" class="btn btn-primary">
+                    Tiếp theo <i class="bi bi-arrow-right ms-1"></i>
+                  </a>
+                {% else %}
+                  <a href="{{ url_for('test_result', session_id=session.id) }}" class="btn btn-success">
+                    Xem kết quả <i class="bi bi-trophy-fill ms-1"></i>
+                  </a>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <button class="btn btn-danger btn-answer btn-lg px-5" data-answer="true" id="btn-phishing">
+                  <i class="bi bi-exclamation-triangle-fill me-2"></i>Phishing
+                </button>
+                <button class="btn btn-success btn-answer btn-lg px-5" data-answer="false" id="btn-legit">
+                  <i class="bi bi-shield-check me-2"></i>Hợp lệ
+                </button>
+              </div>
+
+              <!-- Feedback (hidden until answer) -->
+              <div id="feedback-box" class="feedback-box mt-3" style="display:none"></div>
+
+              <!-- Next button (hidden until answer) -->
+              <div class="d-flex justify-content-end mt-3" id="next-btn-row" style="display:none !important">
+                <a href="#" class="btn btn-primary" id="next-btn">
+                  Tiếp theo <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+              </div>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const SESSION_ID = "{{ session.id }}";
+const Q_NUM = {{ q_num }};
+const TOTAL = {{ total }};
+const SUBMIT_URL = "{{ url_for('submit_answer', session_id=session.id, q_num=q_num) }}";
+
+document.querySelectorAll(".btn-answer").forEach(btn => {
+  btn.addEventListener("click", async function() {
+    const answer = this.dataset.answer === "true";
+
+    // Disable buttons
+    document.querySelectorAll(".btn-answer").forEach(b => b.disabled = true);
+    this.classList.add("active");
+
+    try {
+      const resp = await fetch(SUBMIT_URL, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({answer})
+      });
+      const data = await resp.json();
+
+      const feedbackBox = document.getElementById("feedback-box");
+      feedbackBox.style.display = "block";
+
+      if (data.correct) {
+        feedbackBox.className = "feedback-box feedback-correct mt-3";
+        feedbackBox.innerHTML = `
+          <div class="feedback-header">
+            <i class="bi bi-check-circle-fill me-2"></i><strong>Chính xác!</strong>
+          </div>
+          <div class="explanation-text mt-2">
+            <i class="bi bi-lightbulb-fill me-1 text-warning"></i>${data.explanation}
+          </div>`;
+      } else {
+        const correct_label = data.correct_answer ? "Phishing" : "Hợp lệ";
+        feedbackBox.className = "feedback-box feedback-wrong mt-3";
+        feedbackBox.innerHTML = `
+          <div class="feedback-header">
+            <i class="bi bi-x-circle-fill me-2"></i><strong>Sai rồi!</strong>
+            <span class="ms-2">Đáp án đúng: <strong>${correct_label}</strong></span>
+          </div>
+          <div class="explanation-text mt-2">
+            <i class="bi bi-lightbulb-fill me-1 text-warning"></i>${data.explanation}
+          </div>`;
+      }
+
+      // Show next button
+      const nextRow = document.getElementById("next-btn-row");
+      nextRow.style.display = "flex";
+      nextRow.style.setProperty("display", "flex", "important");
+      const nextBtn = document.getElementById("next-btn");
+      nextBtn.href = data.next_url;
+      if (data.is_last) {
+        nextBtn.innerHTML = 'Xem kết quả <i class="bi bi-trophy-fill ms-1"></i>';
+        nextBtn.className = "btn btn-success";
+      }
+
+      // Scroll feedback into view
+      feedbackBox.scrollIntoView({behavior: "smooth", block: "nearest"});
+
+    } catch (e) {
+      alert("Có lỗi xảy ra. Vui lòng thử lại.");
+      document.querySelectorAll(".btn-answer").forEach(b => b.disabled = false);
+    }
+  });
+});
+</script>
+{% endblock %}
