@@ -27,24 +27,38 @@
 
 - Python 3.8+
 - pip
+- Git
 
 ---
 
-## Cài đặt
+## Cài đặt trên macOS
 
 ```bash
-# 1. Di chuyển vào thư mục dự án
+# 1. Clone repository
+git clone https://github.com/micosanguyen/phishing-test.git
 cd phishing-test
 
-# 2. (Tuỳ chọn) Tạo môi trường ảo
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # macOS/Linux
+# 2. Tạo môi trường ảo
+python3 -m venv venv
+source venv/bin/activate
 
 # 3. Cài dependencies
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 
-# 4. Chạy ứng dụng
+# 4. Tạo file cấu hình
+cp .env.example .env
+```
+
+Mở file `.env` và điền giá trị thực:
+
+```
+ADMIN_KEY=mat-khau-admin-cua-ban
+SECRET_KEY=mot-chuoi-bi-mat-ngau-nhien
+EXAM_SIZE=10
+```
+
+```bash
+# 5. Chạy ứng dụng
 python app.py
 ```
 
@@ -52,29 +66,54 @@ Mở trình duyệt tại: **http://localhost:5000**
 
 Lần đầu chạy, hệ thống tự tạo database và thêm 5 câu hỏi mẫu.
 
+> **Lưu ý macOS:** Nếu máy chưa có Python 3, cài đặt qua [Homebrew](https://brew.sh):
+> ```bash
+> brew install python
+> ```
+
+---
+
+## Cài đặt trên Windows
+
+```cmd
+# 1. Clone repository
+git clone https://github.com/micosanguyen/phishing-test.git
+cd phishing-test
+
+# 2. Tạo môi trường ảo
+python -m venv venv
+venv\Scripts\activate
+
+# 3. Cài dependencies
+pip install -r requirements.txt
+
+# 4. Tạo file cấu hình
+copy .env.example .env
+```
+
+Mở file `.env` và điền giá trị thực, sau đó:
+
+```cmd
+# 5. Chạy ứng dụng
+python app.py
+```
+
+> **Lưu ý Windows (PowerShell):** Nếu gặp lỗi `cannot be loaded because running scripts is disabled`, chạy lệnh sau rồi kích hoạt lại venv:
+> ```powershell
+> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+> ```
+
 ---
 
 ## Cấu hình
 
-Chỉnh sửa file `config.py` hoặc đặt biến môi trường:
+Tất cả cấu hình được đặt trong file `.env` (tạo từ `.env.example`):
 
-| Biến | Mặc định | Mô tả |
-|---|---|---|
-| `ADMIN_KEY` | `changeme-admin-key` | Khóa đăng nhập admin |
-| `SECRET_KEY` | `flask-secret-key-2024` | Khóa bảo mật Flask session |
-| `EXAM_SIZE` | `10` | Số câu hỏi mặc định mỗi bài thi |
-
-**Ví dụ đặt biến môi trường (Windows):**
-```cmd
-set ADMIN_KEY=mat-khau-bi-mat-cua-ban
-python app.py
-```
-
-**Ví dụ đặt biến môi trường (Linux/macOS):**
-```bash
-export ADMIN_KEY=mat-khau-bi-mat-cua-ban
-python app.py
-```
+| Biến | Mô tả |
+|---|---|
+| `ADMIN_KEY` | Khóa đăng nhập admin |
+| `SECRET_KEY` | Khóa bảo mật Flask session (đặt giá trị ngẫu nhiên dài) |
+| `EXAM_SIZE` | Số câu hỏi mặc định mỗi bài thi (mặc định: `10`) |
 
 ---
 
