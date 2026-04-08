@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import uuid
 import csv
 import io
@@ -27,6 +28,26 @@ init_db(app)
 
 
 # ---------------------------------------------------------------------------
+# Template filters
+# ---------------------------------------------------------------------------
+
+@app.template_filter("format_explanation")
+def format_explanation(text):
+    """Split 'Intro. (1) item. (2) item.' into intro + <ul> list."""
+    # Split on (1), (2), ... patterns
+    parts = re.split(r'\s*\(\d+\)\s*', text)
+    items = [p.strip().rstrip('.') for p in parts if p.strip()]
+
+    if len(items) <= 1:
+        return f'<p class="explanation-intro">{text}</p>'
+
+    intro = items[0]
+    bullets = items[1:]
+    li_html = ''.join(f'<li>{b}</li>' for b in bullets)
+    return (
+        f'<p class="explanation-intro">{intro}</p>'
+        f'<ul class="explanation-list">{li_html}</ul>'
+    )
 # Helpers
 # ---------------------------------------------------------------------------
 

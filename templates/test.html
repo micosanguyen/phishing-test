@@ -59,8 +59,8 @@
                     <span class="ms-2">Đáp án đúng: <strong>{{ "Phishing" if question.is_phishing else "Hợp lệ" }}</strong></span>
                   {% endif %}
                 </div>
-                <div class="explanation-text mt-2">
-                  <i class="bi bi-lightbulb-fill me-1 text-warning"></i>{{ question.explanation }}
+                <div class="explanation-text">
+                  <i class="bi bi-lightbulb-fill me-1 text-warning"></i>{{ question.explanation | format_explanation | safe }}
                 </div>
               </div>
               <div class="d-flex justify-content-end mt-3">
@@ -111,6 +111,15 @@ const Q_NUM = {{ q_num }};
 const TOTAL = {{ total }};
 const SUBMIT_URL = "{{ url_for('submit_answer', session_id=session.id, q_num=q_num) }}";
 
+function formatExplanation(text) {
+  const parts = text.split(/\s*\(\d+\)\s*/);
+  const items = parts.map(p => p.trim().replace(/\.$/, '')).filter(p => p);
+  if (items.length <= 1) return `<p class="explanation-intro">${text}</p>`;
+  const intro = items[0];
+  const bullets = items.slice(1);
+  return `<p class="explanation-intro">${intro}</p><ul class="explanation-list">${bullets.map(b => `<li>${b}</li>`).join('')}</ul>`;
+}
+
 document.querySelectorAll(".btn-answer").forEach(btn => {
   btn.addEventListener("click", async function() {
     const answer = this.dataset.answer === "true";
@@ -136,8 +145,8 @@ document.querySelectorAll(".btn-answer").forEach(btn => {
           <div class="feedback-header">
             <i class="bi bi-check-circle-fill me-2"></i><strong>Chính xác!</strong>
           </div>
-          <div class="explanation-text mt-2">
-            <i class="bi bi-lightbulb-fill me-1 text-warning"></i>${data.explanation}
+          <div class="explanation-text">
+            <i class="bi bi-lightbulb-fill me-1 text-warning"></i>${formatExplanation(data.explanation)}
           </div>`;
       } else {
         const correct_label = data.correct_answer ? "Phishing" : "Hợp lệ";
@@ -147,8 +156,8 @@ document.querySelectorAll(".btn-answer").forEach(btn => {
             <i class="bi bi-x-circle-fill me-2"></i><strong>Sai rồi!</strong>
             <span class="ms-2">Đáp án đúng: <strong>${correct_label}</strong></span>
           </div>
-          <div class="explanation-text mt-2">
-            <i class="bi bi-lightbulb-fill me-1 text-warning"></i>${data.explanation}
+          <div class="explanation-text">
+            <i class="bi bi-lightbulb-fill me-1 text-warning"></i>${formatExplanation(data.explanation)}
           </div>`;
       }
 
