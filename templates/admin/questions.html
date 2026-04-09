@@ -18,29 +18,29 @@
     <table class="table table-hover mb-0">
       <thead class="table-light">
         <tr>
-          <th>#</th>
+          <th class="sortable" data-col="0" data-type="num" style="cursor:pointer;user-select:none">#</th>
           <th>Tiêu đề</th>
-          <th>Loại</th>
-          <th>Đáp án</th>
+          <th class="sortable" data-col="2" data-type="str" style="cursor:pointer;user-select:none">Loại</th>
+          <th class="sortable" data-col="3" data-type="str" style="cursor:pointer;user-select:none">Đáp án</th>
           <th>Trạng thái</th>
-          <th>Ngày tạo</th>
+          <th class="sortable" data-col="5" data-type="str" style="cursor:pointer;user-select:none">Ngày tạo</th>
           <th class="text-end">Thao tác</th>
         </tr>
       </thead>
       <tbody>
         {% for q in questions %}
-          <tr class="{% if not q.active %}table-secondary{% endif %}">
-            <td class="text-muted">{{ q.id }}</td>
+          <tr data-row class="{% if not q.active %}table-secondary{% endif %}">
+            <td class="text-muted" data-val="{{ q.id }}">{{ q.id }}</td>
             <td>
               <div class="fw-semibold">{{ q.title }}</div>
               <div class="text-muted small text-truncate" style="max-width:300px">{{ q.explanation[:80] }}…</div>
             </td>
-            <td>
+            <td data-val="{{ q.scenario_type }}">
               {% set type_icons = {'email': 'bi-envelope', 'link': 'bi-link-45deg', 'image': 'bi-image', 'text': 'bi-file-text'} %}
               <i class="bi {{ type_icons.get(q.scenario_type, 'bi-file-text') }} me-1"></i>
               <span class="text-capitalize">{{ q.scenario_type }}</span>
             </td>
-            <td>
+            <td data-val="{{ 'phishing' if q.is_phishing else 'hople' }}">
               {% if q.is_phishing %}
                 <span class="badge bg-danger">Phishing</span>
               {% else %}
@@ -54,7 +54,7 @@
                 <span class="badge bg-secondary">Ẩn</span>
               {% endif %}
             </td>
-            <td class="text-muted small">{{ q.created_at.strftime('%d/%m/%Y') }}</td>
+            <td class="text-muted small" data-val="{{ q.created_at.strftime('%Y%m%d') }}">{{ q.created_at.strftime('%d/%m/%Y') }}</td>
             <td class="text-end">
               <div class="btn-group btn-group-sm">
                 <a href="{{ url_for('admin_question_edit', qid=q.id) }}" class="btn btn-outline-primary">
@@ -82,4 +82,29 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  let sortCol = null, sortAsc = true;
+  document.querySelectorAll("th.sortable").forEach(th => {
+    th.addEventListener("click", function () {
+      const col  = parseInt(this.dataset.col);
+      const type = this.dataset.type;
+      sortAsc = (sortCol === col) ? !sortAsc : true;
+      sortCol = col;
+      const tbody = document.querySelector(".table tbody");
+      const rows  = Array.from(tbody.querySelectorAll("tr[data-row]"));
+      rows.sort((a, b) => {
+        const va = a.children[col]?.dataset.val ?? a.children[col]?.innerText.trim() ?? "";
+        const vb = b.children[col]?.dataset.val ?? b.children[col]?.innerText.trim() ?? "";
+        if (type === "num") return sortAsc ? (+va - +vb) : (+vb - +va);
+        return sortAsc ? va.localeCompare(vb, "vi") : vb.localeCompare(va, "vi");
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+})();
+</script>
 {% endblock %}
