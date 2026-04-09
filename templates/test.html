@@ -174,7 +174,7 @@ document.querySelectorAll(".btn-answer").forEach(btn => {
             <i class="bi bi-check-circle-fill me-2"></i><strong>Chính xác!</strong>
           </div>
           <div class="explanation-text">
-            <i class="bi bi-lightbulb-fill me-1 text-warning"></i>${formatExplanation(data.explanation)}
+            ${formatExplanation(data.explanation)}
           </div>`;
       } else {
         const correct_label = data.correct_answer ? "Phishing" : "Hợp lệ";
@@ -185,7 +185,7 @@ document.querySelectorAll(".btn-answer").forEach(btn => {
             <span class="ms-2">Đáp án đúng: <strong>${correct_label}</strong></span>
           </div>
           <div class="explanation-text">
-            <i class="bi bi-lightbulb-fill me-1 text-warning"></i>${formatExplanation(data.explanation)}
+            ${formatExplanation(data.explanation)}
           </div>`;
       }
 

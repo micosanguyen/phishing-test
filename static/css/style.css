@@ -209,5 +209,6 @@ footer { background: #fff; }
 .stat-yellow .stat-icon { color: #f59e0b; }
 .stat-red   .stat-icon { color: #ef4444; }
 
-/* ---- Link scenario pointer-events ---- */
+/* ---- Placeholder text ---- */
+.form-control::placeholder { color: #c4c9d4; opacity: 1; }
 .scenario-box a { cursor: pointer; }
