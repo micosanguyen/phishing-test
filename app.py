@@ -33,19 +33,30 @@ init_db(app)
 
 @app.template_filter("format_explanation")
 def format_explanation(text):
-    """Split 'Intro. (1) item. (2) item.' into intro + <ul> list."""
-    # Split on (1), (2), ... patterns
+    """Split 'Verdict. Label: (1) item. (2) item.' into structured HTML."""
     parts = re.split(r'\s*\(\d+\)\s*', text)
     items = [p.strip().rstrip('.') for p in parts if p.strip()]
+    icon = '<i class="bi bi-lightbulb-fill text-warning me-1"></i>'
 
     if len(items) <= 1:
-        return f'<p class="explanation-intro">{text}</p>'
+        return f'<div class="explanation-verdict">{icon}<strong>{text}</strong></div>'
 
     intro = items[0]
     bullets = items[1:]
     li_html = ''.join(f'<li>{b}</li>' for b in bullets)
+
+    # Split intro into "Verdict sentence." + "Dấu hiệu:" label
+    m = re.search(r'\.\s*([^.]+:)\s*$', intro)
+    if m:
+        verdict = intro[:m.start() + 1].strip()
+        label = m.group(1).strip()
+    else:
+        verdict = intro
+        label = 'Dấu hiệu:'
+
     return (
-        f'<p class="explanation-intro">{intro}</p>'
+        f'<div class="explanation-verdict">{icon}<strong>{verdict}</strong></div>'
+        f'<div class="explanation-label">{label}</div>'
         f'<ul class="explanation-list">{li_html}</ul>'
     )
 # Helpers

@@ -63,7 +63,7 @@
                       {% endif %}
                     </div>
                     <div class="explanation-text">
-                      <i class="bi bi-lightbulb-fill text-warning me-1"></i>{{ q.explanation | format_explanation | safe }}
+                      {{ q.explanation | format_explanation | safe }}
                     </div>
                   {% else %}
                     <span class="text-muted small">Chưa trả lời</span>

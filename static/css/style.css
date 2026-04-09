@@ -119,9 +119,17 @@ body {
   padding-top: 10px;
 }
 
-.explanation-intro {
-  margin: 0 0 8px 0;
-  font-weight: 500;
+.explanation-verdict {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.explanation-label {
+  font-weight: 600;
+  margin: 0 0 6px 0;
 }
 
 .explanation-list {
