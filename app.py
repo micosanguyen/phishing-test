@@ -36,7 +36,7 @@ def get_settings():
                 return json.load(f)
         except Exception:
             pass
-    return {"bg_image": None, "title_color": "", "desc_color": ""}
+    return {"bg_image": None, "title_color": "", "desc_color": "", "logo_image": None}
 
 
 def save_settings(data):
@@ -113,11 +113,12 @@ def get_exam_size():
 def index():
     s = get_settings()
     bg_image = s.get("bg_image")
-    # Default to white text when a dark background overlay is active
     title_color = s.get("title_color") or ("#ffffff" if bg_image else "")
     desc_color  = s.get("desc_color")  or ("#e2e8f0" if bg_image else "")
+    logo_image  = s.get("logo_image")
     return render_template("index.html", bg_image=bg_image,
-                           title_color=title_color, desc_color=desc_color)
+                           title_color=title_color, desc_color=desc_color,
+                           logo_image=logo_image)
 
 
 @app.route("/start", methods=["POST"])
@@ -358,6 +359,7 @@ def admin_dashboard():
         bg_image=get_settings().get("bg_image"),
         title_color=get_settings().get("title_color", ""),
         desc_color=get_settings().get("desc_color", ""),
+        logo_image=get_settings().get("logo_image"),
     )
 
 
@@ -446,6 +448,46 @@ def admin_settings_colors():
     settings["desc_color"]  = request.form.get("desc_color", "").strip()
     save_settings(settings)
     flash("Đã lưu màu chữ trang chủ.", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/settings/logo", methods=["POST"])
+@admin_required
+def admin_logo_upload():
+    file = request.files.get("logo_image")
+    if not file or not file.filename:
+        flash("Vui lòng chọn file ảnh.", "warning")
+        return redirect(url_for("admin_dashboard"))
+    if not allowed_file(file.filename):
+        flash("Định dạng không hỗ trợ. Dùng PNG, JPG, WEBP, GIF.", "danger")
+        return redirect(url_for("admin_dashboard"))
+    filename = "logo_" + secure_filename(file.filename)
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+    file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+    settings = get_settings()
+    old = settings.get("logo_image")
+    if old and old != filename:
+        old_path = os.path.join(app.config["UPLOAD_FOLDER"], old)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+    settings["logo_image"] = filename
+    save_settings(settings)
+    flash("Đã cập nhật logo trang chủ.", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/settings/logo/remove", methods=["POST"])
+@admin_required
+def admin_logo_remove():
+    settings = get_settings()
+    old = settings.get("logo_image")
+    if old:
+        old_path = os.path.join(app.config["UPLOAD_FOLDER"], old)
+        if os.path.exists(old_path):
+            os.remove(old_path)
+        settings["logo_image"] = None
+        save_settings(settings)
+        flash("Đã xóa logo, hiển thị icon mặc định.", "success")
     return redirect(url_for("admin_dashboard"))
 
 
