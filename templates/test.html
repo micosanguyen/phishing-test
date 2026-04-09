@@ -108,7 +108,11 @@
 <script>
 // Block all link clicks inside scenario box (keep href visible for hover, prevent navigation)
 document.querySelectorAll(".scenario-box a").forEach(a => {
-  a.addEventListener("click", e => e.preventDefault());
+  if (a.getAttribute("href") === "#") {
+    a.removeAttribute("href"); // placeholder links: no status bar URL
+  } else {
+    a.addEventListener("click", e => e.preventDefault()); // phishing links: show URL but don't navigate
+  }
 });
 
 const SESSION_ID = "{{ session.id }}";
