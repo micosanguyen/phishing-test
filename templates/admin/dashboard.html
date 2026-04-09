@@ -96,7 +96,8 @@
           <th>%</th>
           <th>Trạng thái</th>
           <th>Thời gian</th>
-          <th>Ngày</th>
+          <th>Ngày (GMT+7)</th>
+          <th>Hành động</th>
         </tr>
       </thead>
       <tbody>
@@ -122,10 +123,30 @@
             <td class="text-muted small">
               {% if s.duration_minutes %}{{ s.duration_minutes }} phút{% else %}—{% endif %}
             </td>
-            <td class="text-muted small">{{ s.started_at.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td class="text-muted small">{{ s.started_at | to_gmt7 }}</td>
+            <td>
+              <div class="d-flex gap-1">
+                {% if not s.is_complete %}
+                  <form method="POST" action="{{ url_for('admin_session_end', session_id=s.id) }}">
+                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                            title="Kết thúc phiên"
+                            onclick="return confirm('Kết thúc phiên làm bài của {{ s.user_name }}?')">
+                      <i class="bi bi-stop-circle"></i>
+                    </button>
+                  </form>
+                {% endif %}
+                <form method="POST" action="{{ url_for('admin_session_delete', session_id=s.id) }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger"
+                          title="Xóa record"
+                          onclick="return confirm('Xóa lượt thi của {{ s.user_name }}? Hành động này không thể hoàn tác.')">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
           </tr>
         {% else %}
-          <tr><td colspan="7" class="text-center text-muted py-4">Chưa có lượt thi nào.</td></tr>
+          <tr><td colspan="8" class="text-center text-muted py-4">Chưa có lượt thi nào.</td></tr>
         {% endfor %}
       </tbody>
     </table>

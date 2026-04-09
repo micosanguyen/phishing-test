@@ -4,7 +4,7 @@ import re
 import uuid
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 
 from flask import (
@@ -30,6 +30,14 @@ init_db(app)
 # ---------------------------------------------------------------------------
 # Template filters
 # ---------------------------------------------------------------------------
+
+@app.template_filter("to_gmt7")
+def to_gmt7(dt):
+    if dt is None:
+        return "—"
+    _GMT7 = timezone(timedelta(hours=7))
+    return dt.replace(tzinfo=timezone.utc).astimezone(_GMT7).strftime("%d/%m/%Y %H:%M")
+
 
 @app.template_filter("format_explanation")
 def format_explanation(text):
@@ -339,6 +347,28 @@ def admin_settings():
         exam_size = 10
     session["exam_size"] = exam_size
     flash(f"Đã cập nhật: mỗi bài thi sẽ có {exam_size} câu hỏi.", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/sessions/<session_id>/delete", methods=["POST"])
+@admin_required
+def admin_session_delete(session_id):
+    s = TestSession.query.get_or_404(session_id)
+    TestAnswer.query.filter_by(session_id=session_id).delete()
+    db.session.delete(s)
+    db.session.commit()
+    flash("Đã xóa lượt thi.", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/sessions/<session_id>/end", methods=["POST"])
+@admin_required
+def admin_session_end(session_id):
+    s = TestSession.query.get_or_404(session_id)
+    if not s.is_complete:
+        s.completed_at = datetime.utcnow()
+        db.session.commit()
+        flash(f"Đã kết thúc phiên của {s.user_name}.", "success")
     return redirect(url_for("admin_dashboard"))
 
 
