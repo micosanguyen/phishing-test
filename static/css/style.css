@@ -69,7 +69,7 @@ body {
 .email-field .label { color: #6b7280; min-width: 72px; display: inline-block; font-weight: 600; }
 
 .email-body { padding: 16px; }
-.email-body a { pointer-events: none; }
+.email-body a { cursor: pointer; }
 
 .chat-bubble {
   background: #f0f7ff;
@@ -202,4 +202,4 @@ footer { background: #fff; }
 .stat-red   .stat-icon { color: #ef4444; }
 
 /* ---- Link scenario pointer-events ---- */
-.scenario-box a { pointer-events: none; }
+.scenario-box a { cursor: pointer; }
