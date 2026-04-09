@@ -60,17 +60,17 @@
                 <a href="{{ url_for('admin_question_edit', qid=q.id) }}" class="btn btn-outline-primary">
                   <i class="bi bi-pencil"></i>
                 </a>
-                <form method="POST" action="{{ url_for('admin_question_toggle', qid=q.id) }}" class="d-inline">
-                  <button type="submit" class="btn btn-outline-secondary" title="{{ 'Ẩn' if q.active else 'Kích hoạt' }}">
-                    <i class="bi {{ 'bi-eye-slash' if q.active else 'bi-eye' }}"></i>
-                  </button>
-                </form>
-                <form method="POST" action="{{ url_for('admin_question_delete', qid=q.id) }}" class="d-inline"
-                      onsubmit="return confirm('Xác nhận xóa câu hỏi này?')">
-                  <button type="submit" class="btn btn-outline-danger">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </form>
+                <button type="button" class="btn btn-outline-secondary btn-toggle"
+                        data-url="{{ url_for('admin_question_toggle', qid=q.id) }}"
+                        data-active="{{ '1' if q.active else '0' }}"
+                        title="{{ 'Ẩn' if q.active else 'Kích hoạt' }}">
+                  <i class="bi {{ 'bi-eye-slash' if q.active else 'bi-eye' }}"></i>
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-delete"
+                        data-url="{{ url_for('admin_question_delete', qid=q.id) }}"
+                        title="Xóa">
+                  <i class="bi bi-trash"></i>
+                </button>
               </div>
             </td>
           </tr>
@@ -86,6 +86,68 @@
 
 {% block scripts %}
 <script>
+// ── Toast helper ──────────────────────────────────────────────────────────────
+function showToast(message, type) {
+  const bg = type === 'success' ? 'text-bg-success' : type === 'danger' ? 'text-bg-danger' : 'text-bg-secondary';
+  const el = document.createElement('div');
+  el.className = `toast align-items-center ${bg} border-0 shadow`;
+  el.setAttribute('role', 'alert');
+  el.setAttribute('data-bs-autohide', 'true');
+  el.setAttribute('data-bs-delay', '3500');
+  el.innerHTML = `<div class="d-flex"><div class="toast-body fw-semibold">${message}</div>
+    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+  document.querySelector('.toast-container').appendChild(el);
+  new bootstrap.Toast(el).show();
+  el.addEventListener('hidden.bs.toast', () => el.remove());
+}
+
+// ── AJAX helper ───────────────────────────────────────────────────────────────
+async function postAjax(url) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  });
+  return res.json();
+}
+
+// ── Toggle ────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.btn-toggle').forEach(btn => {
+  btn.addEventListener('click', async function () {
+    const row = this.closest('tr');
+    const data = await postAjax(this.dataset.url);
+    if (!data.ok) return showToast('Có lỗi xảy ra.', 'danger');
+
+    const isActive = data.active;
+    // Update row dimming
+    row.classList.toggle('table-secondary', !isActive);
+    // Update status badge (col index 4)
+    row.children[4].innerHTML = isActive
+      ? '<span class="badge bg-success">Hoạt động</span>'
+      : '<span class="badge bg-secondary">Ẩn</span>';
+    // Update button icon & title
+    const icon = this.querySelector('i');
+    icon.className = isActive ? 'bi bi-eye-slash' : 'bi bi-eye';
+    this.title = isActive ? 'Ẩn' : 'Kích hoạt';
+    this.dataset.active = isActive ? '1' : '0';
+    showToast(data.message, 'success');
+  });
+});
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.btn-delete').forEach(btn => {
+  btn.addEventListener('click', async function () {
+    if (!confirm('Xác nhận xóa câu hỏi này?')) return;
+    const row = this.closest('tr');
+    const data = await postAjax(this.dataset.url);
+    if (!data.ok) return showToast('Có lỗi xảy ra.', 'danger');
+    row.style.transition = 'opacity 0.3s';
+    row.style.opacity = '0';
+    setTimeout(() => row.remove(), 300);
+    showToast(data.message, 'success');
+  });
+});
+
+// ── Sort ──────────────────────────────────────────────────────────────────────
 (function () {
   let sortCol = null, sortAsc = true;
   document.querySelectorAll("th.sortable").forEach(th => {

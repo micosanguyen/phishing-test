@@ -562,6 +562,8 @@ def admin_question_delete(qid):
     question = Question.query.get_or_404(qid)
     db.session.delete(question)
     db.session.commit()
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify(ok=True, message="Đã xóa câu hỏi.")
     flash("Đã xóa câu hỏi.", "success")
     return redirect(url_for("admin_questions"))
 
@@ -573,6 +575,8 @@ def admin_question_toggle(qid):
     question.active = not question.active
     db.session.commit()
     status = "kích hoạt" if question.active else "ẩn"
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify(ok=True, active=question.active, message=f"Đã {status} câu hỏi.")
     flash(f"Đã {status} câu hỏi.", "success")
     return redirect(url_for("admin_questions"))
 
