@@ -150,11 +150,11 @@
         <tr>
           <th>Họ tên</th>
           <th>Email</th>
-          <th>Điểm</th>
+          <th class="sortable" data-col="2" data-type="num" style="cursor:pointer;user-select:none">Điểm</th>
           <th>%</th>
-          <th>Trạng thái</th>
+          <th class="sortable" data-col="4" data-type="str" style="cursor:pointer;user-select:none">Trạng thái</th>
           <th>Thời gian</th>
-          <th>Ngày (GMT+7)</th>
+          <th class="sortable" data-col="6" data-type="str" style="cursor:pointer;user-select:none">Ngày (GMT+7)</th>
           <th>Hành động</th>
         </tr>
       </thead>
@@ -162,16 +162,16 @@
         {% for s in sessions %}
           {% set total_q = s.total_questions %}
           {% set pct = (s.score / total_q * 100)|round|int if total_q > 0 else 0 %}
-          <tr>
+          <tr data-row>
             <td class="fw-semibold">{{ s.user_name }}</td>
             <td class="text-muted small">{{ s.user_email }}</td>
-            <td>{{ s.score }}/{{ total_q }}</td>
+            <td data-val="{{ pct }}">{{ s.score }}/{{ total_q }}</td>
             <td>
               <span class="badge {% if pct >= 70 %}bg-success{% elif pct >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
                 {{ pct }}%
               </span>
             </td>
-            <td>
+            <td data-val="{{ '1' if s.is_complete else '0' }}">
               {% if s.is_complete %}
                 <span class="badge bg-success">Hoàn thành</span>
               {% else %}
@@ -181,7 +181,7 @@
             <td class="text-muted small">
               {% if s.duration_minutes %}{{ s.duration_minutes }} phút{% else %}—{% endif %}
             </td>
-            <td class="text-muted small">{{ s.started_at | to_gmt7 }}</td>
+            <td class="text-muted small" data-val="{{ s.started_at.strftime('%Y%m%d%H%M') }}">{{ s.started_at | to_gmt7 }}</td>
             <td>
               <div class="d-flex gap-1">
                 {% if not s.is_complete %}
@@ -211,4 +211,32 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  let sortCol = null, sortAsc = true;
+
+  document.querySelectorAll("th.sortable").forEach(th => {
+    th.addEventListener("click", function () {
+      const col   = parseInt(this.dataset.col);
+      const type  = this.dataset.type;
+      sortAsc = (sortCol === col) ? !sortAsc : true;
+      sortCol = col;
+
+      // Sort rows
+      const tbody = document.querySelector(".table tbody");
+      const rows  = Array.from(tbody.querySelectorAll("tr[data-row]"));
+      rows.sort((a, b) => {
+        const va = a.children[col]?.dataset.val ?? a.children[col]?.innerText.trim() ?? "";
+        const vb = b.children[col]?.dataset.val ?? b.children[col]?.innerText.trim() ?? "";
+        if (type === "num") return sortAsc ? (+va - +vb) : (+vb - +va);
+        return sortAsc ? va.localeCompare(vb, "vi") : vb.localeCompare(va, "vi");
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+})();
+</script>
 {% endblock %}
