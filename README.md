@@ -194,6 +194,113 @@ Trên Dashboard → chọn số câu (5 / 10 / 15 / 20) → nhấn **Lưu**.
 
 ---
 
+## Deploy lên PythonAnywhere (miễn phí)
+
+PythonAnywhere là nền tảng hosting Python miễn phí, phù hợp để public ứng dụng với tên miền dạng `username.pythonanywhere.com`.
+
+### Bước 1: Tạo tài khoản
+
+Vào [pythonanywhere.com](https://www.pythonanywhere.com) → **Start running Python online** → **Create a Beginner account**.
+
+### Bước 2: Mở Bash console
+
+Tab **Consoles** → **Bash** → **New console**.
+
+### Bước 3: Clone repo và cài dependencies
+
+```bash
+git clone https://github.com/micosanguyen/phishing-test.git
+cd phishing-test
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Bước 4: Tạo file `.env`
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Điền các giá trị thực vào. Lưu: `Ctrl+X` → `Y` → `Enter`.
+
+### Bước 5: Khởi tạo database
+
+```bash
+python -c "from app import app, db; app.app_context().push(); db.create_all()"
+```
+
+### Bước 6: Tạo Web App
+
+Tab **Web** → **Add a new web app** → **Next** → **Manual configuration** → **Python 3.10** → **Next**.
+
+### Bước 7: Sửa WSGI file
+
+Trong tab Web, click vào link **WSGI configuration file**. Xóa toàn bộ nội dung, thay bằng:
+
+```python
+import sys
+import os
+
+project_home = '/home/YOUR_USERNAME/phishing-test'
+if project_home not in sys.path:
+    sys.path.insert(0, project_home)
+
+from dotenv import load_dotenv
+load_dotenv(os.path.join(project_home, '.env'))
+
+from app import app as application
+```
+
+Thay `YOUR_USERNAME` bằng username thực. Lưu file.
+
+### Bước 8: Cấu hình Virtualenv
+
+Trong tab Web, phần **Virtualenv** → nhập:
+
+```
+/home/YOUR_USERNAME/phishing-test/venv
+```
+
+### Bước 9: Cấu hình Static Files
+
+Trong tab Web, phần **Static files**, thêm 2 dòng:
+
+| URL | Directory |
+|---|---|
+| `/static/` | `/home/YOUR_USERNAME/phishing-test/static` |
+| `/uploads/` | `/home/YOUR_USERNAME/phishing-test/uploads` |
+
+### Bước 10: Reload
+
+Click nút **Reload** (màu xanh lá) → truy cập `https://YOUR_USERNAME.pythonanywhere.com`.
+
+### Cập nhật code sau này
+
+```bash
+# Mở Bash console trên PythonAnywhere
+cd phishing-test
+git pull
+source venv/bin/activate
+pip install -r requirements.txt   # chỉ cần nếu có thư viện mới
+```
+
+Sau đó bấm **Reload** trên tab Web.
+
+### Giới hạn Free Tier
+
+| Giới hạn | Giá trị |
+|---|---|
+| CPU | 100 giây/ngày (đủ cho vài nghìn request) |
+| Disk | 512 MB |
+| Web app | 1 app |
+| Custom domain | Không hỗ trợ |
+| Outbound internet | Chỉ các domain trong whitelist (Gmail SMTP được hỗ trợ) |
+| Inactivity | App bị tắt sau 3 tháng không có lượt truy cập — cần vào tab Web gia hạn |
+
+---
+
 ## Cấu trúc thư mục
 
 ```
